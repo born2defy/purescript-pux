@@ -1,5 +1,6 @@
 'use strict';
 
+/* jshint node:true */
 // module Pux.Renderer.React
 
 var React = (typeof require === 'function' && require('react'))
@@ -111,7 +112,7 @@ exports.reactAttr = function (str) {
 exports.reactHandler = function (input) {
   return function (handler) {
     return function (ev) {
-      if (ev.nativeEvent === undefined) {
+      if (!ev || ev.nativeEvent === undefined) {
         input(handler(ev))();
       } else {
         input(handler(ev.nativeEvent))();
@@ -132,7 +133,7 @@ var PureComponent = React.createClass({
   }
 });
 
-exports.reactElement = function (node, name, attrs, children) {
+exports.reactElement = function (name, attrs, children) {
   // convert smolder attribute names to react attribute names
   var reactAttrs = {};
   for (var key in attrs) {

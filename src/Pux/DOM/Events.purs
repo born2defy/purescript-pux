@@ -1,7 +1,7 @@
 module Pux.DOM.Events where
 
 import DOM.Event.Types (Event)
-import Text.Smolder.Markup (EventHandler(..), EventHandlers, on)
+import Text.Smolder.Markup (EventHandlers, on)
 
 -- | Synonym for
 -- | [DOM.Event.Types.Event](https://pursuit.purescript.org/packages/purescript-dom/4.3.1/docs/DOM.Event.Types#t:Event)
@@ -13,11 +13,12 @@ foreign import targetValue :: DOMEvent -> String
 
 -- | Map event handler that returns event type `a` to event handler that returns
 -- | event type `b`.
-mapEventHandler :: ∀ a b
-                   .  (a -> b)
-                   -> EventHandler (DOMEvent -> a)
-                   -> EventHandler (DOMEvent -> b)
-mapEventHandler f (EventHandler s a) = EventHandler s (\e -> f (a e))
+-- | MODIFIED - removed as obsolete due to mapEvent in smolder
+-- mapEventHandler :: ∀ a b
+--                    .  (a -> b)
+--                    -> EventHandler (DOMEvent -> a)
+--                    -> EventHandler (DOMEvent -> b)
+-- mapEventHandler f (EventHandler s a) = EventHandler s (\e -> f (a e))
 
 onCopy :: ∀ ev. (DOMEvent -> ev) -> EventHandlers (DOMEvent -> ev)
 onCopy = on "onCopy"

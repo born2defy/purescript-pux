@@ -34,7 +34,7 @@
     "purescript-react": "^3.0.0",
     "purescript-globals": "^3.0.0",
     "purescript-dom": "^4.2.0",
-    "purescript-smolder": "^9.0.0",
+    "purescript-smolder": "https://github.com/born2defy/purescript-smolder.git#altRender",
     "purescript-css": "^3.0.0"
   },
   "devDependencies": {
