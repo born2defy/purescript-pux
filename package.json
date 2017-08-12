@@ -10,6 +10,7 @@
     "publish:packages": "pulp publish && npm publish",
     "build": "pulp build",
     "build:example:counter": "pulp build --main BasicExample --to output/bundle.js -I examples/counter",
+    "build:lifeCycleTest": "pulp build --main LifeCycleTest --to output/lifeCycleTest.js",
     "build:example:nested-foldp": "pulp build --main CounterPairExample --to output/bundle.js -I examples/nested-foldp",
     "build:example:form": "pulp build --main FormsExample --to output/bundle.js -I examples/form",
     "build:example:ajax": "pulp build --main AjaxExample --to output/bundle.js -I examples/ajax",

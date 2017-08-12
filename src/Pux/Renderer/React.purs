@@ -6,26 +6,42 @@ module Pux.Renderer.React
   , renderToReact
   , reactClass
   , reactClassWithProps
+    -- | MODIFIED
+  , addLifeCycles
+    -- | MODIFIED
+  , lifeCycles
+    -- | MODIFIED
+  , ReactLifeCycles
+    -- | MODIFIED
+  , ref
+    -- | MODIFIED
+  , getRef
+    -- | MODIFIED
+  , addRef
   ) where
 
 import Prelude
 
 import Control.Monad.Eff (Eff)
-import Control.Monad.Free (foldFree)
+import Control.Monad.Free (foldFree, liftF)
 import Control.Monad.State (State, execState, state)
+import DOM (DOM)
+import DOM.HTML.Types (HTMLElement)
 import Data.Array (snoc)
 import Data.CatList (CatList)
+import Data.CatList (snoc) as CatList
 import Data.Function.Uncurried (Fn3, runFn3)
 import Data.List (List(..), singleton)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
+import Data.Monoid (mempty)
 import Data.NaturalTransformation (NaturalTransformation)
-import Data.Nullable (Nullable, toNullable)
+import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.StrMap (StrMap)
 import Data.StrMap (fromFoldable) as StrMap
 import Data.Tuple (Tuple(..))
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.HTML.Attributes (data_)
-import React (ReactClass, ReactElement)
+import React (ComponentDidMount, ComponentDidUpdate, ComponentWillMount, ComponentWillReceiveProps, ComponentWillUnmount, ComponentWillUpdate, ReactClass, ReactElement, ReactProps, ReactRefs, ReactThis, ReadOnly, ShouldComponentUpdate)
 import Signal (Signal, (~>))
 import Signal.Channel (CHANNEL, Channel, channel, send)
 import Text.Smolder.Markup (Attr(..), Attribute, EventHandler(EventHandler), Markup, MarkupM(..), attribute, parent, (!))
@@ -94,6 +110,48 @@ reactClassWithProps component key' = \props children ->
 dangerouslySetInnerHTML :: String -> Attribute
 dangerouslySetInnerHTML = attribute "dangerouslySetInnerHTML"
 
+-- | MODIFIED
+ref :: String -> Attribute
+ref = attribute "ref"
+
+-- | MODIFIED
+type ReactLifeCycles eff
+  = { componentWillMount        :: Maybe (ComponentWillMount Unit Unit eff)
+    , componentDidMount         :: Maybe (ComponentDidMount Unit Unit eff)
+    , componentWillReceiveProps :: Maybe (ComponentWillReceiveProps Unit Unit eff)
+    , shouldComponentUpdate     :: Maybe (ShouldComponentUpdate Unit Unit eff)
+    , componentWillUpdate       :: Maybe (ComponentWillUpdate Unit Unit eff)
+    , componentDidUpdate        :: Maybe (ComponentDidUpdate Unit Unit eff)
+    , componentWillUnmount      :: Maybe (ComponentDidUpdate Unit Unit eff)
+    }
+
+-- | MODIFIED
+lifeCycles :: ∀ eff. ReactLifeCycles eff
+lifeCycles =
+  { componentWillMount        : Nothing
+  , componentDidMount         : Nothing
+  , componentWillReceiveProps : Nothing
+  , shouldComponentUpdate     : Nothing
+  , componentWillUpdate       : Nothing
+  , componentDidUpdate        : Nothing
+  , componentWillUnmount      : Nothing
+  }
+
+-- | MODIFIED
+addLifeCycles :: ∀ eff ev.  ReactLifeCycles eff -> HTML ev -> HTML ev
+addLifeCycles = wrapLifeCycles toNullable wrapped
+  where
+  wrapped l c = liftF $ Element "lifecycle" c (CatList.snoc mempty (Attr "lifecycle" l)) mempty unit
+
+
+getRef :: ∀ p s eff. String -> ReactThis p s -> Eff (dom :: DOM, refs :: ReactRefs ReadOnly | eff) (Maybe HTMLElement)
+getRef name ctx = map toMaybe $ getRefImp name ctx
+
+-- | MODIFIED
+foreign import wrapLifeCycles :: ∀ eff ev a. (Maybe a -> Nullable a) -> (String -> HTML ev -> HTML ev) -> ReactLifeCycles eff -> HTML ev -> HTML ev
+foreign import getRefImp :: ∀ p s eff. String -> ReactThis p s -> Eff (dom :: DOM, refs :: ReactRefs ReadOnly | eff) (Nullable HTMLElement)
+foreign import addRef :: ∀ p s eff. ReactThis p s -> Eff (props :: ReactProps | eff) Unit
+
 foreign import toReact :: ∀ props. Signal (Array ReactElement) -> ReactClass props
 foreign import registerClass :: ∀ ev props. ReactClass props -> String -> HTML ev -> HTML ev
 foreign import registerProps :: ∀ props. props -> (String -> Attribute) -> Attribute
@@ -107,7 +165,7 @@ foreign import reactAttr :: String -> ReactAttribute
 
 foreign import data ReactAttribute :: Type
 
-
+-- | MODIFIED - for Free Monad in Smolder
 renderItem :: ∀ e. (e -> ReactAttribute) -> NaturalTransformation (MarkupM e) (State (Array ReactElement))
 renderItem input (Element n c a e r) =
   let kids = renderNodes input c
@@ -117,7 +175,7 @@ renderItem input (Element n c a e r) =
 renderItem input (Content t r) = state \s -> Tuple r $ snoc s $ reactText t
 renderItem input (Empty r) = pure r
 
--- | MODIFIED - Switched this to use MarkupM with revised constructors
+-- | MODIFIED - for Free Monad in Smolder
 renderNodes :: ∀ e. (e -> ReactAttribute) -> Markup e -> Array ReactElement
 renderNodes input m = execState (foldFree (renderItem input) m) []
 

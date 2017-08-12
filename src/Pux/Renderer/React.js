@@ -143,6 +143,10 @@ exports.reactElement = function (name, attrs, children) {
       reactAttrs[key] = attrs[key];
     }
   }
+// MODIFIED
+  if (reactAttrs.ref !== undefined){
+    console.log("React Ref is here!  It's name is " + reactAttrs.ref);
+  }
 
   if (reactAttrs.dangerouslySetInnerHTML !== undefined) {
     reactAttrs.dangerouslySetInnerHTML = { __html : reactAttrs.dangerouslySetInnerHTML };
@@ -206,7 +210,24 @@ exports.reactElement = function (name, attrs, children) {
 
   // Cache react element. If the same node is rendered again the cached element will be used.
   if (name === 'thunk') {
+    console.log("We have a thunk");
     return React.createElement(PureComponent, reactAttrs, children);
+  }
+
+  // MODIFIED - Add lifecycle functions
+  if (name === 'lifecycle') {
+    console.log("Found lifecycle component");
+  var lifeCycleMap = reactAttrs.lifecycle.lifeCycles;
+  console.log("Lifecycles are " + lifeCycleMap);
+  // strip out our special lifecycle prop
+  var reactProps = {};
+  for (var k in reactAttrs) {
+    if (k !== 'lifecycle') {
+      reactProps[key] = reactAttrs[key];
+    }
+  }
+
+    return React.createElement(LifeCycleComponent(lifeCycleMap), reactProps, children);
   }
 
   return React.createElement(name, reactAttrs, children);
@@ -215,6 +236,113 @@ exports.reactElement = function (name, attrs, children) {
 exports.reactText = function (string) {
   return string;
 };
+
+//MODIFIED
+// LifeCycle functions
+exports.wrapLifeCycles = function(toNullable){
+  return function(wrapper){
+    return function(lifeCycles){
+      return function(component){
+          return wrapper(new PuxLifeCycleString(maybeToNullable(toNullable, lifeCycles)))(component);
+      };
+    };
+  };
+};
+
+//MODIFIED
+function maybeToNullable(toNullable, lifecycles){
+    var nulled = {};
+    for (var key in lifecycles) {
+        nulled[key] = toNullable(lifecycles[key]);
+    }
+    console.log("Converted to Nullable.  Here is the result " + nulled);
+    return nulled;
+}
+
+//MODIFIED
+// Used to store out-of-band lifecycle objects as a String type safely.
+// In the worst case the attribute is manipulated, it will be treated as an
+// empty string and any renderer cache will always miss.
+function PuxLifeCycleString (lifeCycles) {
+  this.lifeCycles = lifeCycles;
+}
+
+//MODIFIED
+PuxLifeCycleString.prototype.toString = function () {
+  return '';
+};
+
+//MODIFIED
+// Wraps lifecycle views in a component class
+function LifeCycleComponent(lifecycles){
+  var lifeCycleClass = {};
+
+  if (lifecycles.componentWillMount){
+      console.log("componentWillMount lifecycle has been found");
+      lifeCycleClass.componentWillMount = function(){
+        return lifecycles.componentWillMount(this)();
+      };
+  }
+
+  if (lifecycles.componentDidMount){
+      console.log("componentDidMount lifecycle has been found");
+      lifeCycleClass.componentDidMount = function(){
+        return lifecycles.componentDidMount(this)();
+      };
+  }
+
+  if (lifecycles.shouldComponentUpdate){
+      console.log("shouldComponentUpdate lifecycle has been found");
+      lifeCycleClass.shouldComponentUpdate = function(nextProps, nextState){
+        return lifecycles.shouldComponentUpdate(this)(nextProps)(nextState)();
+      };
+  }
+
+  if (lifecycles.componentWillReceiveProps){
+      console.log("componentWillReceiveProps lifecycle has been found");
+      lifeCycleClass.componentWillReceiveProps = function(nextProps){
+        return lifecycles.componentWillReceiveProps(this)(nextProps)();
+      };
+  }
+
+  if (lifecycles.componentWillUpdate){
+      console.log("componentWillUpdate lifecycle has been found");
+      lifeCycleClass.componentWillUpdate = function(nextProps, nextState){
+        return lifecycles.componentWillUpdate(this)(nextProps)(nextState)();
+      };
+  }
+
+  if (lifecycles.componentDidUpdate){
+      console.log("componentDidUpdate lifecycle has been found");
+      lifeCycleClass.componentDidUpdate = function(prevProps, prevState){
+        return lifecycles.componentDidUpdate(this)(prevProps)(prevState)();
+      };
+  }
+
+  if (lifecycles.componentWillUnmount){
+      console.log("componentWillUnmount lifecycle has been found");
+      lifeCycleClass.componentWillUnmount = function(){
+        return lifecycles.componentWillUnmount(this)();
+      };
+  }
+
+    lifeCycleClass.render = function () {
+      return this.props.children;
+    };
+
+    return React.createClass(lifeCycleClass);
+}
+
+//MODIFIED
+exports.getRefImp = function(name){
+  return function(ctx){
+    return function(){
+      return ctx.name;
+    };
+  };
+};
+
+
 
 // Normalize Smolder attribute names with React attribute names
 var attrMap = {
@@ -259,4 +387,4 @@ var attrMap = {
   'srcset': 'srcSet',
   'tabindex': 'tabIndex',
   'usemap': 'useMap'
-}
+};
