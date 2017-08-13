@@ -1,4 +1,4 @@
-exports.sendToPuxAttr = function(mapEvt){
+exports.mapToPuxAttr = function(mapEvt){
   var send = function(a){ return mapEvt(a); }
   return new PuxSendString(send);
 };

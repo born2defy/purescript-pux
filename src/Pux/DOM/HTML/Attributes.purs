@@ -26,7 +26,7 @@ style :: CSS -> Attribute
 style css = A.style (fromMaybe "" (renderedInline (render css)))
 
 -- | MODIFIED - FOR PURESCRIPT REACT COMPONENTS TO INTEGRATE WITH STF PUX CHANNEL
-sendToPux :: ∀ a ev. (a -> ev) -> Attribute
-sendToPux mapEvt = attribute "sendToPux" (sendToPuxAttr mapEvt)
+mapToPux :: ∀ a ev. (a -> ev) -> Attribute
+mapToPux mapEvt = attribute "sendToPux" (mapToPuxAttr mapEvt)
 
-foreign import sendToPuxAttr :: ∀ a ev. (a -> ev) -> String
+foreign import mapToPuxAttr :: ∀ a ev. (a -> ev) -> String
