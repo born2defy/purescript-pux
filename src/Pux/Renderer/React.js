@@ -105,6 +105,16 @@ exports.registerProps = function (props) {
   };
 };
 
+
+//MODIFIED
+exports.mkSend  = function(send){
+  return function(input){
+    return function(evtVal){
+      return input(send.send)(evtVal);
+    }
+  };
+};
+
 exports.reactAttr = function (str) {
   return str;
 };

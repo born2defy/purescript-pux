@@ -6,6 +6,7 @@ module Pux.Renderer.React
   , renderToReact
   , reactClass
   , reactClassWithProps
+  , SendToPux
   ) where
 
 import Prelude
@@ -107,6 +108,7 @@ foreign import reactAttr :: String -> ReactAttribute
 
 foreign import data ReactAttribute :: Type
 
+foreign import mkSend :: ∀ e. String -> (e -> ReactAttribute) -> ReactAttribute
 
 renderItem :: ∀ e. (e -> ReactAttribute) -> NaturalTransformation (MarkupM e) (State (Array ReactElement))
 renderItem input (Element n c a e r) =
@@ -126,8 +128,12 @@ renderAttrs input attrs handlers = StrMap.fromFoldable tuples
   where
   tuples = map toTupleA attrs <> map toTupleH handlers
   toTupleH (EventHandler key value) = Tuple key (input value)
+  toTupleA (Attr "sendToPux" send) = Tuple "sendToPux" (mkSend send input)
   toTupleA (Attr key value) = Tuple key (reactAttr value)
+
 
 hook :: ∀ a fx. Channel (List a) -> (a -> Eff (channel :: CHANNEL | fx) Unit)
 hook input = \a -> do
   send input (singleton a)
+
+type SendToPux a r = { sendToPux :: a -> Attribute | r }
