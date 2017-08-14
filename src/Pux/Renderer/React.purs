@@ -6,7 +6,6 @@ module Pux.Renderer.React
   , renderToReact
   , reactClass
   , reactClassWithProps
-  , SendToPux
   ) where
 
 import Prelude
@@ -108,8 +107,9 @@ foreign import reactAttr :: String -> ReactAttribute
 
 foreign import data ReactAttribute :: Type
 
-foreign import mkSend :: ∀ e. String -> (e -> ReactAttribute) -> ReactAttribute
-
+-- | MODIFIED
+-- | Modified using Bodil Stokke's implementation from her existing pull request to
+-- | utilize Smolder 10+'s Free Monad implementation
 renderItem :: ∀ e. (e -> ReactAttribute) -> NaturalTransformation (MarkupM e) (State (Array ReactElement))
 renderItem input (Element n c a e r) =
   let kids = renderNodes input c
@@ -119,21 +119,28 @@ renderItem input (Element n c a e r) =
 renderItem input (Content t r) = state \s -> Tuple r $ snoc s $ reactText t
 renderItem input (Empty r) = pure r
 
--- | MODIFIED - Switched this to use MarkupM with revised constructors
+-- | MODIFIED
+-- | Modified using Bodil Stokke's implementation from her existing pull request to
+-- | utilize Smolder 10+'s Free Monad implementation
 renderNodes :: ∀ e. (e -> ReactAttribute) -> Markup e -> Array ReactElement
 renderNodes input m = execState (foldFree (renderItem input) m) []
 
+-- | MODIFIED
+-- | This allows the pux callback to be embedded in a String valued Attribute
+-- | It is used in the modified version of renderAttrs
+foreign import mkSend :: ∀ e. String -> (e -> ReactAttribute) -> ReactAttribute
+
+-- | MODIFIED
+-- | The attributes toTupleA fucntion has been modified to pattern match on the
+-- | sendToPux attribute and embed the pux callback into the attribute value
 renderAttrs :: ∀ e. (e -> ReactAttribute) -> CatList Attr -> CatList (EventHandler e) -> StrMap ReactAttribute
 renderAttrs input attrs handlers = StrMap.fromFoldable tuples
   where
   tuples = map toTupleA attrs <> map toTupleH handlers
   toTupleH (EventHandler key value) = Tuple key (input value)
-  toTupleA (Attr "sendToPux" send) = Tuple "sendToPux" (mkSend send input)
+  toTupleA (Attr "sendToPux" send) = Tuple "sendToPux" (mkSend send input)  -- | MODIFIED
   toTupleA (Attr key value) = Tuple key (reactAttr value)
-
 
 hook :: ∀ a fx. Channel (List a) -> (a -> Eff (channel :: CHANNEL | fx) Unit)
 hook input = \a -> do
   send input (singleton a)
-
-type SendToPux a r = { sendToPux :: a -> Attribute | r }
