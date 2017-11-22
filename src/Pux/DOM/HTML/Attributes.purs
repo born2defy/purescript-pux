@@ -24,9 +24,3 @@ key = attribute "key"
 -- | Render inline CSS and return a style attribute.
 style :: CSS -> Attribute
 style css = A.style (fromMaybe "" (renderedInline (render css)))
-
--- | MODIFIED - FOR PURESCRIPT REACT COMPONENTS TO INTEGRATE WITH STF PUX CHANNEL
-sendToPux :: ∀ a ev. (a -> ev) -> Attribute
-sendToPux mapEvt = attribute "sendToPux" (sendToPuxAttr mapEvt)
-
-foreign import sendToPuxAttr :: ∀ a ev. (a -> ev) -> String

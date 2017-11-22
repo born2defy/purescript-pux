@@ -109,11 +109,12 @@ exports.registerProps = function (props) {
 
 
 //MODIFIED
+//  This allows the pux callback to be embedded in a String valued Attribute
 exports.mkSend  = function(send){
   return function(input){
     return function(evtVal){
       return input(send.send)(evtVal);
-    }
+    };
   };
 };
 
