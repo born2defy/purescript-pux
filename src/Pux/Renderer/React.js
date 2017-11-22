@@ -6,6 +6,8 @@
 var React = (typeof require === 'function' && require('react'))
          || (typeof window === 'object' && window.React);
 
+var createReactClass = require("create-react-class");
+
 var class_cache = {};
 
 var props_cache = {
@@ -58,7 +60,7 @@ exports.toReact = function (vdomSignal) {
     }
   }
 
-  return React.createClass({
+  return createReactClass({
     componentWillMount: function () {
       var ctx = this;
       var subscribed = false;
@@ -133,7 +135,7 @@ exports.reactHandler = function (input) {
 
 // Wraps memoized views in a component class which only re-renders if the state
 // has changed.
-var PureComponent = React.createClass({
+var PureComponent = createReactClass({
   shouldComponentUpdate: function (nextProps) {
     if (nextProps.state.st === undefined) return true;
     return nextProps.state.st !== this.props.state.st;
